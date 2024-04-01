@@ -1,0 +1,53 @@
+-- Criação da tabela TB_MUNICIPIOS
+CREATE TABLE IF NOT EXISTS TB_MUNICIPIOS (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    microrregiao TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL
+);
+
+-- Litoral de Aracati
+INSERT INTO TB_MUNICIPIOS (nome, microrregiao, latitude, longitude) VALUES
+    ('Aracati', 'Litoral de Aracati', -4.570438, -37.774587),
+    ('Fortim', 'Litoral de Aracati', -4.4527563502777285, -37.80429370703002),
+    ('Icapuí', 'Litoral de Aracati', -4.724228586980959, -37.42544205609747),
+    ('Itaiçaba', 'Litoral de Aracati', -4.675489812037201, -37.82110073060839);
+
+-- Baixo Jaguaribe
+INSERT INTO TB_MUNICIPIOS (nome, microrregiao, latitude, longitude) VALUES
+    ('Alto Santo', 'Baixo Jaguaribe', -5.521015153342664, -38.27096892987657),
+    ('Ibicuitinga', 'Baixo Jaguaribe', -4.95962, -38.6284),
+    ('Jaguaruana', 'Baixo Jaguaribe', -4.837639630745704, -37.78248936080315),
+    ('Limoeiro do Norte', 'Baixo Jaguaribe', -5.14889, -38.0977),
+    ('Morada Nova', 'Baixo Jaguaribe', -5.10562, -38.3671),
+    ('Palhano', 'Baixo Jaguaribe', -5.072136, -37.963600), -- Corrigido a ordem da latitude e longitude
+    ('Quixeré', 'Baixo Jaguaribe', -5.229084, -38.129425), -- Corrigido a ordem da latitude e longitude
+    ('Russas', 'Baixo Jaguaribe', -4.943346407663853, -37.9767732400398),
+    ('São João do Jaguaribe', 'Baixo Jaguaribe', -5.272674, -38.272762),
+    ('Tabuleiro do Norte', 'Baixo Jaguaribe', -5.229084, -38.129425);
+
+-- Médio Jaguaribe
+INSERT INTO TB_MUNICIPIOS (nome, microrregiao, latitude, longitude) VALUES
+    ('Jaguaretama', 'Médio Jaguaribe', -5.613075081484771, -38.76258001912323),
+    ('Jaguaribara', 'Médio Jaguaribe', -5.461081359569713, -38.461720767312656),
+    ('Jaguaribe', 'Médio Jaguaribe', -5.888654938571367, -38.6233537882674);
+
+-- Serra do Pereiro
+INSERT INTO TB_MUNICIPIOS (nome, microrregiao, latitude, longitude) VALUES
+    ('Ereré', 'Serra do Pereiro', -6.0308659, -38.3496844),
+    ('Iracema', 'Serra do Pereiro', -5.8095792, -38.3052673),
+    ('Pereiro', 'Serra do Pereiro', -6.0465091, -38.4609008),
+    ('Potiretama', 'Serra do Pereiro', -5.7228027,-38.1561586);
+
+-- Selecionando todos os municípios
+SELECT * FROM TB_MUNICIPIOS;
+
+-- Selecionando municípios por microrregião
+SELECT nome, microrregiao FROM TB_MUNICIPIOS WHERE microrregiao = 'Litoral de Aracati';
+
+-- Selecionando municípios por nome
+SELECT * FROM TB_MUNICIPIOS WHERE nome LIKE '%Jaguar%';
+
+-- Ordenando municípios por latitude
+SELECT nome, latitude FROM TB_MUNICIPIOS ORDER BY latitude ASC;
