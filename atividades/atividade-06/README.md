@@ -1,4 +1,3 @@
-
 ```markdown
 # FastAPI Backend com SQLite3
 
@@ -30,7 +29,8 @@ Implemente os seguintes endpoints:
 
 ### 1. Instalar Dependências
 
-Instale as dependências necessárias usando o pip:
+Instale as dependências necessárias utilizando o pip:
+
 ```bash
 pip install fastapi uvicorn
 ```
@@ -85,4 +85,3 @@ curl -X PUT "http://127.0.0.1:8000/atualizar_aluno/1" -H "Content-Type: applicat
 curl -X DELETE "http://127.0.0.1:8000/excluir_aluno/1"
 ```
 (Substitua `1` pelo `id` do aluno que você deseja excluir.)
-```
