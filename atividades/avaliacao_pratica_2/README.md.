@@ -1,1 +1,132 @@
+---
 
+# Atividade-10
+
+## Enunciado
+
+Crie um Banco de Dados envolvendo quatro tabelas. Uma tabela é um Cadastro (por exemplo, TB_ALUNO), uma outra tabela é Cadastro (por exemplo, TB_DISCIPLINA) e uma outra também é Cadastro (por exemplo, TB_PROFESSOR). A quarta tabela, Matricula, se relaciona com as tabelas Aluno, Professor e Disciplina. Na tabela Matricula existirão chaves estrangeiras para Aluno, Professor e Disciplina. Além disso, a tabela Matricula conterá os atributos com as notas N1, N2 e Faltas.
+
+Você deve criar instruções SQL com CRUD para as quatro tabelas. Além disso, implemente um código Python para ler a tabela Matricula e listar o status de aprovação dos alunos matriculados.
+
+---
+
+## Passo a passo para execução
+
+### 1. Logar no Docker Hub
+
+Antes de começar, você precisará se logar no Docker Hub para baixar as imagens necessárias. Use o comando abaixo e insira suas credenciais do Docker:
+
+bash
+docker login
+
+
+### 2. Criar o arquivo do Docker Compose
+
+Crie o arquivo docker-compose.yml, que será responsável por configurar os containers do MySQL e PHPMyAdmin:
+
+bash
+vi docker-compose.yml
+
+
+Copie e cole o conteúdo abaixo no arquivo docker-compose.yml:
+
+yaml
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydatabase
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_container
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:
+
+
+Salve o arquivo com o comando :wq e pressione *Enter*.
+
+### 3. Executar o Docker Compose
+
+Agora, vamos subir os containers que incluem o MySQL e o PHPMyAdmin:
+
+bash
+docker-compose up -d
+
+
+### 4. Criar o script Python
+
+Crie o arquivo Python que irá gerenciar o banco de dados:
+
+bash
+vi main.py
+
+
+Copie e cole o conteúdo do script Python:
+
+python
+import mysql.connector
+from mysql.connector import Error
+# (restante do script Python, conforme fornecido)
+
+
+Salve o arquivo com o comando :wq e pressione *Enter*.
+
+### 5. Instalar dependências Python
+
+Se você estiver executando o script Python no seu sistema local, instale a biblioteca mysql-connector-python, necessária para conectar ao MySQL:
+
+bash
+pip install mysql-connector-python
+
+
+### 6. Executar o script Python
+
+Por fim, execute o script Python para interagir com o banco de dados:
+
+bash
+python main.py
+
+
+### Acesso ao PHPMyAdmin
+
+Você pode acessar o PHPMyAdmin em seu navegador através do endereço:
+
+
+http://localhost:8080
+
+
+Use as seguintes credenciais para acessar o banco de dados MySQL via PHPMyAdmin:
+- *Servidor*: mysql
+- *Usuário*: root
+- *Senha*: rootpassword
+
+### Finalizando
+
+Ao finalizar o uso, você pode derrubar os containers com o comando:
+
+bash
+docker-compose down
+
+
+---
