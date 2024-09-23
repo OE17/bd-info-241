@@ -76,7 +76,7 @@ def inserir_disciplina(cursor):
     """Insere uma nova disciplina na tabela TB_DISCIPLINA com seleção de carga horária."""
     nome = input("Digite o nome da disciplina: ").strip()
     codigo = input("Digite o código da disciplina: ").strip()
-    
+
     while True:
         try:
             print("\nSelecione a carga horária da disciplina:")
@@ -97,7 +97,7 @@ def inserir_disciplina(cursor):
                 print("Opção inválida. Por favor, tente novamente.")
         except ValueError:
             print("Entrada inválida. Por favor, insira um número válido.")
-    
+
     try:
         query = "INSERT INTO TB_DISCIPLINA (nome, codigo, carga_horaria) VALUES (%s, %s, %s)"
         cursor.execute(query, (nome, codigo, carga_horaria))
@@ -196,15 +196,18 @@ def calcular_media(N1, N2):
     """Calcula a média ponderada."""
     return ((N1 * 2) + (N2 * 3)) / 5
 
-def determinar_status(media):
-    """Determina o status de aprovação."""
-    if media >= 6:
+def determinar_status(media, faltas, carga_horaria):
+    """Determina o status de aprovação, levando em conta as faltas e a média."""
+    max_faltas = carga_horaria * 0.25  # 25% do total da carga horária
+    if faltas > max_faltas:
+        return "Reprovado por Faltas"
+    elif media >= 6:
         return "Aprovado"
     else:
         return "Reprovado por Média"
 
 def listar_status_aprovacao(cursor):
-    """Lista o status de aprovação dos alunos matriculados."""
+    """Lista o status de aprovação dos alunos matriculados, levando em conta as faltas."""
     try:
         query = """
             SELECT 
@@ -212,7 +215,9 @@ def listar_status_aprovacao(cursor):
                 d.nome AS Nome_Disciplina,
                 p.nome AS Nome_Professor,
                 m.N1,
-                m.N2
+                m.N2,
+                m.Faltas,
+                d.carga_horaria
             FROM 
                 TB_MATRICULA m
             JOIN TB_ALUNO a ON m.aluno_id = a.id
@@ -221,7 +226,6 @@ def listar_status_aprovacao(cursor):
         """
         cursor.execute(query)
         registros = cursor.fetchall()
-
         if not registros:
             print("Nenhuma matrícula encontrada.")
             return
@@ -229,9 +233,12 @@ def listar_status_aprovacao(cursor):
         for registro in registros:
             N1 = float(registro[3])
             N2 = float(registro[4])
+            faltas = int(registro[5])
+            carga_horaria = int(registro[6])
             media = calcular_media(N1, N2)
-            status = determinar_status(media)
-            print(f"Aluno: {registro[0]}, Disciplina: {registro[1]}, Professor: {registro[2]},             N1: {N1}, N2: {N2}, Média: {media:.2f}, Status: {status}")
+            status = determinar_status(media, faltas, carga_horaria)
+            print(f"Aluno: {registro[0]}, Disciplina: {registro[1]}, Professor: {registro[2]}, "
+                  f"N1: {N1}, N2: {N2}, Faltas: {faltas}, Média: {media:.2f}, Status: {status}")
 
     except Error as e:
         print(f"Erro ao listar status de aprovação: {e}")
