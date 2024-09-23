@@ -1,7 +1,6 @@
 import mysql.connector
 from mysql.connector import Error
 import sys
-import random
 
 def conectar():
     """Estabelece conexão com o banco de dados MySQL."""
@@ -14,6 +13,7 @@ def conectar():
             database='mydatabase'    # Certifique-se de que o banco de dados existe
         )
         if connection.is_connected():
+            print("Conexão com o MySQL estabelecida com sucesso.")
             return connection
     except Error as e:
         print(f"Erro ao conectar ao MySQL: {e}")
@@ -76,7 +76,7 @@ def inserir_disciplina(cursor):
     """Insere uma nova disciplina na tabela TB_DISCIPLINA com seleção de carga horária."""
     nome = input("Digite o nome da disciplina: ").strip()
     codigo = input("Digite o código da disciplina: ").strip()
-    
+
     while True:
         try:
             print("\nSelecione a carga horária da disciplina:")
@@ -97,7 +97,7 @@ def inserir_disciplina(cursor):
                 print("Opção inválida. Por favor, tente novamente.")
         except ValueError:
             print("Entrada inválida. Por favor, insira um número válido.")
-    
+
     try:
         query = "INSERT INTO TB_DISCIPLINA (nome, codigo, carga_horaria) VALUES (%s, %s, %s)"
         cursor.execute(query, (nome, codigo, carga_horaria))
@@ -196,12 +196,17 @@ def calcular_media(N1, N2):
     """Calcula a média ponderada."""
     return ((N1 * 2) + (N2 * 3)) / 5
 
-def determinar_status(media):
-    """Determina o status de aprovação."""
-    if media >= 6:
+def determinar_status(media, faltas, carga_horaria):
+    """Determina o status de aprovação considerando média e faltas."""
+    limite_faltas = 0.25 * carga_horaria
+    if media >= 6 and faltas <= limite_faltas:
         return "Aprovado"
-    else:
+    elif media < 6 and faltas <= limite_faltas:
         return "Reprovado por Média"
+    elif media >= 6 and faltas > limite_faltas:
+        return "Reprovado por Falta"
+    else:
+        return "Reprovado por Média e Falta"
 
 def listar_status_aprovacao(cursor):
     """Lista o status de aprovação dos alunos matriculados."""
@@ -212,7 +217,9 @@ def listar_status_aprovacao(cursor):
                 d.nome AS Nome_Disciplina,
                 p.nome AS Nome_Professor,
                 m.N1,
-                m.N2
+                m.N2,
+                d.carga_horaria,
+                m.Faltas
             FROM 
                 TB_MATRICULA m
             JOIN TB_ALUNO a ON m.aluno_id = a.id
@@ -226,12 +233,15 @@ def listar_status_aprovacao(cursor):
             print("Nenhuma matrícula encontrada.")
             return
 
+        print("\n--- Status de Aprovação dos Alunos ---")
         for registro in registros:
             N1 = float(registro[3])
             N2 = float(registro[4])
+            carga_horaria = registro[5]
+            faltas = registro[6]
             media = calcular_media(N1, N2)
-            status = determinar_status(media)
-            print(f"Aluno: {registro[0]}, Disciplina: {registro[1]}, Professor: {registro[2]}, N1: {            N1}, N2: {N2}, Média: {media:.2f}, Status: {status}")
+            status = determinar_status(media, faltas, carga_horaria)
+            print(f"Aluno: {registro[0]}, Disciplina: {registro[1]}, Professor: {registro[2]}, N1: {N1}, N2: {N2}, Média: {media:.2f}, Faltas: {faltas}, Status: {status}")
 
     except Error as e:
         print(f"Erro ao listar status de aprovação: {e}")
@@ -246,11 +256,12 @@ def listar_alunos_reprovados(cursor):
                 p.nome AS Nome_Professor,
                 m.N1,
                 m.N2,
-                ((m.N1 * 2) + (m.N2 * 3)) / 5 AS Media,
+                d.carga_horaria,
                 m.Faltas,
                 CASE 
+                    WHEN ((m.N1 * 2) + (m.N2 * 3)) / 5 < 6 AND m.Faltas > 0.25 * d.carga_horaria THEN 'Reprovado por Média e Falta'
                     WHEN ((m.N1 * 2) + (m.N2 * 3)) / 5 < 6 THEN 'Reprovado por Média'
-                    WHEN m.Faltas > 15 THEN 'Reprovado por Falta'
+                    WHEN m.Faltas > 0.25 * d.carga_horaria THEN 'Reprovado por Falta'
                 END AS Status
             FROM 
                 TB_MATRICULA m
@@ -258,7 +269,8 @@ def listar_alunos_reprovados(cursor):
             JOIN TB_DISCIPLINA d ON m.disciplina_id = d.id
             JOIN TB_PROFESSOR p ON m.professor_id = p.id
             WHERE 
-                ((m.N1 * 2) + (m.N2 * 3)) / 5 < 6 OR m.Faltas > 15
+                ((m.N1 * 2) + (m.N2 * 3)) / 5 < 6 
+                OR m.Faltas > 0.25 * d.carga_horaria
         """
         cursor.execute(query)
         registros = cursor.fetchall()
@@ -267,8 +279,9 @@ def listar_alunos_reprovados(cursor):
             print("Nenhum aluno reprovado encontrado.")
             return
 
+        print("\n--- Lista de Alunos Reprovados ---")
         for registro in registros:
-            print(f"Aluno: {registro[0]}, Disciplina: {registro[1]}, Professor: {registro[2]}, N1: {registro[3]}, N2: {registro[4]}, Média: {registro[5]:.2f}, Faltas: {registro[6]}, Status: {registro[7]}")
+            print(f"Aluno: {registro[0]}, Disciplina: {registro[1]}, Professor: {registro[2]}, N1: {registro[3]}, N2: {registro[4]}, Carga Horária: {registro[5]} horas, Faltas: {registro[6]}, Status: {registro[7]}")
 
     except Error as e:
         print(f"Erro ao listar alunos reprovados: {e}")
@@ -283,16 +296,16 @@ def listar_alunos_aprovados(cursor):
                 p.nome AS Nome_Professor,
                 m.N1,
                 m.N2,
-                ((m.N1 * 2) + (m.N2 * 3)) / 5 AS Media,
-                m.Faltas,
-                'Aprovado por Média' AS Status
+                d.carga_horaria,
+                m.Faltas
             FROM 
                 TB_MATRICULA m
             JOIN TB_ALUNO a ON m.aluno_id = a.id
             JOIN TB_DISCIPLINA d ON m.disciplina_id = d.id
             JOIN TB_PROFESSOR p ON m.professor_id = p.id
             WHERE 
-                ((m.N1 * 2) + (m.N2 * 3)) / 5 >= 6
+                ((m.N1 * 2) + (m.N2 * 3)) / 5 >= 6 
+                AND m.Faltas <= 0.25 * d.carga_horaria
         """
         cursor.execute(query)
         registros = cursor.fetchall()
@@ -301,8 +314,12 @@ def listar_alunos_aprovados(cursor):
             print("Nenhum aluno aprovado encontrado.")
             return
 
+        print("\n--- Lista de Alunos Aprovados ---")
         for registro in registros:
-            print(f"Aluno: {registro[0]}, Disciplina: {registro[1]}, Professor: {registro[2]}, N1: {registro[3]}, N2: {registro[4]}, Média: {registro[5]:.2f}, Faltas: {registro[6]}, Status: {registro[7]}")
+            N1 = float(registro[3])
+            N2 = float(registro[4])
+            media = calcular_media(N1, N2)
+            print(f"Aluno: {registro[0]}, Disciplina: {registro[1]}, Professor: {registro[2]}, N1: {N1}, N2: {N2}, Média: {media:.2f}, Faltas: {registro[6]}, Status: Aprovado")
 
     except Error as e:
         print(f"Erro ao listar alunos aprovados: {e}")
@@ -311,8 +328,11 @@ def quantidade_alunos_aprovados(cursor):
     """Retorna a quantidade de alunos aprovados."""
     try:
         query = """
-            SELECT COUNT(*) FROM TB_MATRICULA m
-            WHERE ((m.N1 * 2) + (m.N2 * 3)) / 5 >= 6
+            SELECT COUNT(*) 
+            FROM TB_MATRICULA m
+            JOIN TB_DISCIPLINA d ON m.disciplina_id = d.id
+            WHERE ((m.N1 * 2) + (m.N2 * 3)) / 5 >= 6 
+                AND m.Faltas <= 0.25 * d.carga_horaria
         """
         cursor.execute(query)
         count = cursor.fetchone()[0]
@@ -324,8 +344,11 @@ def quantidade_alunos_reprovados(cursor):
     """Retorna a quantidade de alunos reprovados."""
     try:
         query = """
-            SELECT COUNT(*) FROM TB_MATRICULA m
-            WHERE ((m.N1 * 2) + (m.N2 * 3)) / 5 < 6 OR m.Faltas > 15
+            SELECT COUNT(*) 
+            FROM TB_MATRICULA m
+            JOIN TB_DISCIPLINA d ON m.disciplina_id = d.id
+            WHERE ((m.N1 * 2) + (m.N2 * 3)) / 5 < 6 
+                OR m.Faltas > 0.25 * d.carga_horaria
         """
         cursor.execute(query)
         count = cursor.fetchone()[0]
@@ -383,6 +406,7 @@ def main():
         elif opcao == '12':
             quantidade_alunos_reprovados(cursor)
         elif opcao == '13':
+            print("Saindo do sistema. Até logo!")
             break
         else:
             print("Opção inválida. Tente novamente.")
@@ -390,4 +414,5 @@ def main():
     cursor.close()
     connection.close()
 
+# Chamada direta da função main()
 main()
