@@ -244,7 +244,7 @@ def main():
     criar_tabelas(cursor)
 
     while True:
-        print("\n--- Sistema de Gestão Escolar ---")
+        print("\n--- Sistema Acadêmico ---")
         print("1. Inserir Aluno")
         print("2. Inserir Disciplina")
         print("3. Inserir Professor")
